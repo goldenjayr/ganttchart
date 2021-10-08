@@ -1,25 +1,240 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { Component, useState, useMemo } from 'react'
+import moment from 'moment'
+import styled from 'styled-components'
+import { useTable } from 'react-table'
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+import Timeline, { SidebarHeader, TimelineHeaders, CustomHeader, DateHeader } from 'react-calendar-timeline'
+// import containerResizeDetector from 'react-calendar-timeline/lib/resize-detector/container'
+import 'react-calendar-timeline/lib/Timeline.css'
+
+import generateFakeData from './generate-fake-data'
+
+var keys = {
+  groupIdKey: 'id',
+  groupTitleKey: 'title',
+  groupRightTitleKey: 'rightTitle',
+  itemIdKey: 'id',
+  itemTitleKey: 'title',
+  itemDivTitleKey: 'title',
+  itemGroupKey: 'group',
+  itemTimeStartKey: 'start',
+  itemTimeEndKey: 'end',
+  groupLabelKey: 'title'
 }
 
-export default App;
+const vehicleHeader = [
+  {
+    id: 'unit',
+    label: 'Unit'
+  },
+  {
+    id: 'odometer',
+    label: 'Odometer'
+  },
+  {
+    id: 'location',
+    label: 'Location'
+  },
+  {
+    id: 'year',
+    label: 'Year'
+  },
+  {
+    id: 'make',
+    label: 'Make'
+  },
+  {
+    id: 'model',
+    label: 'Model'
+  }
+]
+
+const { groups, items, data } = generateFakeData(5, 400)
+
+const visibleTimeStart = moment().startOf('day').valueOf()
+const visibleTimeEnd = moment().startOf('day').add(1, 'day').valueOf()
+
+function GanntChart({ className }) {
+  const vehicleColumns = useMemo(
+    () => [
+      {
+        Header: 'Vehicle',
+        columns: [
+          {
+            Header: 'Unit',
+            accessor: 'unit'
+          },
+          {
+            Header: 'Odometer',
+            accessor: 'odometer'
+          },
+          {
+            Header: 'Location',
+            accessor: 'location'
+          },
+          {
+            Header: 'Year',
+            accessor: 'year'
+          },
+          {
+            Header: 'Make',
+            accessor: 'make'
+          },
+          {
+            Header: 'Model',
+            accessor: 'model'
+          }
+        ]
+      }
+    ],
+    []
+  )
+
+  const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } = useTable({
+    columns: vehicleColumns,
+    data
+  })
+  console.log('🚀 ~ file: App.js ~ line 96 ~ GanntChart ~ headerGroups', headerGroups)
+	const groups = useMemo(() => {
+		return
+	}, [])
+  const [state, setState] = useState({
+    groups,
+    items,
+    visibleTimeStart,
+    visibleTimeEnd
+  })
+  const handleTimeChangeFirst = (visibleTimeStart, visibleTimeEnd, updateScrollCanvas) => {
+    console.log('first', visibleTimeStart, visibleTimeEnd)
+    setState((state) => ({ ...state, visibleTimeStart, visibleTimeEnd }))
+  }
+  const handleTimeChangeSecond = (visibleTimeStart, visibleTimeEnd, updateScrollCanvas) => {
+    console.log('second', visibleTimeStart, visibleTimeEnd)
+    setState((state) => ({ ...state, visibleTimeStart, visibleTimeEnd }))
+  }
+
+  // const renderSecond = () => {
+  //   const { groups1, items1, visibleTimeStart, visibleTimeEnd } = state
+
+  //   return (
+  //     <Timeline
+  //       groups={groups1}
+  //       items={items1}
+  //       keys={keys}
+  //       sidebarContent='Helllo'
+  //       sidebarWidth={500}
+  //       rightSidebarWidth={150}
+  //       rightSidebarContent={<div>Above The Right</div>}
+  //       canMove
+  //       canResize='right'
+  //       canSelect
+  //       itemsSorted
+  //       itemTouchSendsClick={false}
+  //       stackItems
+  //       itemHeightRatio={0.75}
+  //       visibleTimeStart={visibleTimeStart}
+  //       visibleTimeEnd={visibleTimeEnd}
+  //       onTimeChange={handleTimeChangeFirst}
+  //     >
+  //       <TimelineHeaders>
+  //         <CustomHeader height={50}>
+  //           {() => {
+  //             return <div style={{ height: 30 }}></div>
+  //           }}
+  //         </CustomHeader>
+  //       </TimelineHeaders>
+  //     </Timeline>
+  //   )
+  // }
+
+  const renderFirst = (state) => {
+    const { groups, items, visibleTimeStart, visibleTimeEnd } = state
+
+    return (
+      <Timeline
+        groups={groups}
+        items={items}
+        keys={keys}
+        sidebarWidth={500}
+        rightSidebarWidth={150}
+        canMove
+        canResize='right'
+        canSelect
+        itemsSorted
+        itemTouchSendsClick={false}
+        stackItems
+        itemHeightRatio={0.75}
+        visibleTimeStart={visibleTimeStart}
+        visibleTimeEnd={visibleTimeEnd}
+        onTimeChange={handleTimeChangeSecond}
+      >
+        <TimelineHeaders>
+          <SidebarHeader>
+            {({ getRootProps }) => {
+              return (
+                <div {...getRootProps()} className='side-header'>
+									<div>
+										{headerGroups.map(headerGroup => {
+											return (
+												<div {...headerGroup.getHeaderGroupProps()} className='side-header--label'>
+													{
+														headerGroup.headers.map((column) => {
+															return (
+																<div {...column.getHeaderProps()} className='side-header--label-item'>
+																	{column.render('Header')}
+																</div>
+															)
+														})
+													}
+												</div>
+											)
+										})}
+									</div>
+                </div>
+              )
+            }}
+          </SidebarHeader>
+          <DateHeader unit='primaryHeader' />
+          <DateHeader />
+          <SidebarHeader variant='right' headerData={{ someData: 'extra' }}>
+            {({ getRootProps, data }) => {
+              return <div {...getRootProps()}>Unassigned Reservations</div>
+            }}
+          </SidebarHeader>
+        </TimelineHeaders>
+      </Timeline>
+    )
+  }
+
+  return (
+    <div className={className}>
+      {renderFirst(state)}
+      {/* {renderSecond(state)} */}
+    </div>
+  )
+}
+
+export default styled(GanntChart)`
+  .side-header {
+    color: white;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+
+    &--title {
+    }
+
+    &--label {
+      display: flex;
+      justify-content: space-between;
+
+      &-item {
+        border: 1px solid white;
+        padding: 5px;
+        width: 100%;
+        height: 100%;
+      }
+    }
+  }
+`
