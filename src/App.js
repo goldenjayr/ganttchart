@@ -94,10 +94,24 @@ function GanntChart({ className }) {
     columns: vehicleColumns,
     data
   })
-  console.log('🚀 ~ file: App.js ~ line 96 ~ GanntChart ~ headerGroups', headerGroups)
-	const groups = useMemo(() => {
-		return
-	}, [])
+
+  const groups = useMemo(() => {
+   	return rows.map((row, i) => {
+      prepareRow(row)
+      console.log('ROW PROPS', row.getRowProps())
+      const { key } = row.getRowProps()
+      return {
+        id: i,
+        title: (
+          <div className='side-header--label'>
+            {row.cells.map((cell) => {
+              return <div {...cell.getCellProps()} className='side-header--label-item'>{cell.render('Cell')}</div>
+            })}
+          </div>
+        )
+      }
+    })
+  }, [])
   const [state, setState] = useState({
     groups,
     items,
@@ -112,40 +126,6 @@ function GanntChart({ className }) {
     console.log('second', visibleTimeStart, visibleTimeEnd)
     setState((state) => ({ ...state, visibleTimeStart, visibleTimeEnd }))
   }
-
-  // const renderSecond = () => {
-  //   const { groups1, items1, visibleTimeStart, visibleTimeEnd } = state
-
-  //   return (
-  //     <Timeline
-  //       groups={groups1}
-  //       items={items1}
-  //       keys={keys}
-  //       sidebarContent='Helllo'
-  //       sidebarWidth={500}
-  //       rightSidebarWidth={150}
-  //       rightSidebarContent={<div>Above The Right</div>}
-  //       canMove
-  //       canResize='right'
-  //       canSelect
-  //       itemsSorted
-  //       itemTouchSendsClick={false}
-  //       stackItems
-  //       itemHeightRatio={0.75}
-  //       visibleTimeStart={visibleTimeStart}
-  //       visibleTimeEnd={visibleTimeEnd}
-  //       onTimeChange={handleTimeChangeFirst}
-  //     >
-  //       <TimelineHeaders>
-  //         <CustomHeader height={50}>
-  //           {() => {
-  //             return <div style={{ height: 30 }}></div>
-  //           }}
-  //         </CustomHeader>
-  //       </TimelineHeaders>
-  //     </Timeline>
-  //   )
-  // }
 
   const renderFirst = (state) => {
     const { groups, items, visibleTimeStart, visibleTimeEnd } = state
@@ -173,23 +153,21 @@ function GanntChart({ className }) {
             {({ getRootProps }) => {
               return (
                 <div {...getRootProps()} className='side-header'>
-									<div>
-										{headerGroups.map(headerGroup => {
-											return (
-												<div {...headerGroup.getHeaderGroupProps()} className='side-header--label'>
-													{
-														headerGroup.headers.map((column) => {
-															return (
-																<div {...column.getHeaderProps()} className='side-header--label-item'>
-																	{column.render('Header')}
-																</div>
-															)
-														})
-													}
-												</div>
-											)
-										})}
-									</div>
+                  <div>
+                    {headerGroups.map((headerGroup) => {
+                      return (
+                        <div {...headerGroup.getHeaderGroupProps()} className='side-header--label'>
+                          {headerGroup.headers.map((column) => {
+                            return (
+                              <div {...column.getHeaderProps()} className='side-header--label-item'>
+                                {column.render('Header')}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
               )
             }}
@@ -221,20 +199,17 @@ export default styled(GanntChart)`
     display: flex;
     flex-direction: column;
     justify-content: space-evenly;
+  }
 
-    &--title {
-    }
+  .side-header--label {
+    display: flex;
+    justify-content: space-between;
+  }
 
-    &--label {
-      display: flex;
-      justify-content: space-between;
-
-      &-item {
-        border: 1px solid white;
-        padding: 5px;
-        width: 100%;
-        height: 100%;
-      }
-    }
+  .side-header--label-item {
+    border: 1px solid white;
+    padding: 5px;
+    width: 100%;
+    height: 100%;
   }
 `
