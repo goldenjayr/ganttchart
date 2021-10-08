@@ -97,7 +97,7 @@ function GanntChart({ className }) {
   })
 
   const groups = useMemo(() => {
-   	return rows.map((row, i) => {
+    return rows.map((row, i) => {
       prepareRow(row)
       const { key } = row.getRowProps()
       return {
@@ -105,7 +105,11 @@ function GanntChart({ className }) {
         title: (
           <div className='side-header--label'>
             {row.cells.map((cell) => {
-              return <div {...cell.getCellProps()} className='side-header--label-item'>{cell.render('Cell')}</div>
+              return (
+                <div {...cell.getCellProps()} className='side-header--label-item'>
+                  {cell.render('Cell')}
+                </div>
+              )
             })}
           </div>
         )
@@ -115,14 +119,14 @@ function GanntChart({ className }) {
   const [state, setState] = useState({
     groups,
     items,
-		groups2,
-		items2,
+    groups2,
+    items2,
     visibleTimeStart,
     visibleTimeEnd
   })
 
-	const [isOpen, setIsOpen] = useState(true)
-	const [isThirdOpen, setIsThirdOpen] = useState(true)
+  const [isOpen, setIsOpen] = useState(true)
+  const [isThirdOpen, setIsThirdOpen] = useState(true)
 
   const handleTimeChangeFirst = (visibleTimeStart, visibleTimeEnd, updateScrollCanvas) => {
     console.log('first', visibleTimeStart, visibleTimeEnd)
@@ -132,14 +136,51 @@ function GanntChart({ className }) {
     setState((state) => ({ ...state, visibleTimeStart, visibleTimeEnd }))
   }
 
-	const handleClick = () => {
-		setIsOpen(!isOpen)
-	}
+  const handleItemResize = (itemId, time, edge) => {
+    setState((state) => {
+      const { items } = state
+      return {
+        ...state,
+        items: items.map((item) =>
+          item.id === itemId
+            ? Object.assign({}, item, {
+                start: edge === 'left' ? time : item.start,
+                end: edge === 'left' ? item.end : time
+              })
+            : item
+        )
+      }
+    })
+  }
+  const handleItemMove = (itemId, dragTime, newGroupOrder) => {
 
-	const handleThirdClick = () => {
-		setIsThirdOpen(!isThirdOpen)
-	}
-	const renderThird = (state) => {
+
+    setState((state) => {
+			const { items, groups } = state
+			const group = groups[newGroupOrder]
+      return {
+        ...state,
+        items: items.map((item) =>
+          item.id === itemId
+            ? Object.assign({}, item, {
+                start: dragTime,
+                end: dragTime + (item.end - item.start),
+                group: group.id
+              })
+            : item
+        )
+      }
+    })
+  }
+
+  const handleClick = () => {
+    setIsOpen(!isOpen)
+  }
+
+  const handleThirdClick = () => {
+    setIsThirdOpen(!isThirdOpen)
+  }
+  const renderThird = (state) => {
     const { groups, items2, visibleTimeStart, visibleTimeEnd } = state
 
     return (
@@ -150,8 +191,8 @@ function GanntChart({ className }) {
         sidebarWidth={600}
         rightSidebarWidth={150}
         rightSidebarContent={<div>Above The Right</div>}
-        canMove
-        canResize='right'
+        canMove={true}
+        canResize={'both'}
         canSelect
         itemsSorted
         itemTouchSendsClick={false}
@@ -160,13 +201,15 @@ function GanntChart({ className }) {
         visibleTimeStart={visibleTimeStart}
         visibleTimeEnd={visibleTimeEnd}
         onTimeChange={handleTimeChangeFirst}
+        onItemResize={handleItemResize}
+				onItemMove={handleItemMove}
       >
         <TimelineHeaders>
-				<SidebarHeader>
+          <SidebarHeader>
             {({ getRootProps }) => {
               return (
                 <div {...getRootProps()} className='side-header' onClick={handleThirdClick}>
-									Third
+                  Third
                 </div>
               )
             }}
@@ -176,13 +219,12 @@ function GanntChart({ className }) {
               return <div style={{ height: 30 }}></div>
             }}
           </CustomHeader>
-
         </TimelineHeaders>
       </Timeline>
     )
   }
 
-	  const renderSecond = (state) => {
+  const renderSecond = (state) => {
     const { groups, items2, visibleTimeStart, visibleTimeEnd } = state
 
     return (
@@ -193,8 +235,8 @@ function GanntChart({ className }) {
         sidebarWidth={600}
         rightSidebarWidth={150}
         rightSidebarContent={<div>Above The Right</div>}
-        canMove
-        canResize='right'
+        canMove={true}
+        canResize={'both'}
         canSelect
         itemsSorted
         itemTouchSendsClick={false}
@@ -203,13 +245,15 @@ function GanntChart({ className }) {
         visibleTimeStart={visibleTimeStart}
         visibleTimeEnd={visibleTimeEnd}
         onTimeChange={handleTimeChangeFirst}
+        onItemResize={handleItemResize}
+				onItemMove={handleItemMove}
       >
         <TimelineHeaders>
-				<SidebarHeader>
+          <SidebarHeader>
             {({ getRootProps }) => {
               return (
                 <div {...getRootProps()} className='side-header' onClick={handleClick}>
-									Second
+                  Second
                 </div>
               )
             }}
@@ -219,7 +263,6 @@ function GanntChart({ className }) {
               return <div style={{ height: 30 }}></div>
             }}
           </CustomHeader>
-
         </TimelineHeaders>
       </Timeline>
     )
@@ -286,7 +329,7 @@ function GanntChart({ className }) {
     <div className={className}>
       {renderFirst(state)}
       {renderSecond(state)}
-			{renderThird(state)}
+      {renderThird(state)}
     </div>
   )
 }
@@ -308,11 +351,11 @@ export default styled(GanntChart)`
   .side-header--label-item {
     border: 1px solid white;
     padding: 5px;
-		width: 100%;
-		text-align: center;
-		overflow-wrap: break-word;
-		height: auto;
-		white-space: normal;
-		line-height: normal;
+    width: 100%;
+    text-align: center;
+    overflow-wrap: break-word;
+    height: auto;
+    white-space: normal;
+    line-height: normal;
   }
 `
