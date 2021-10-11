@@ -136,7 +136,7 @@ function GanntChart({ className }) {
           </div>
         ),
         rightTitle: (
-          <Box className='side-header--label'>
+          <Box className='side-header--label dashed'>
               {rightSideRow.cells.map((cell) => {
                 return (
                   <div {...cell.getCellProps()} className='side-header--label-item'>
@@ -172,10 +172,10 @@ function GanntChart({ className }) {
 
   const handleItemResize = (itemId, time, edge) => {
     setState((state) => {
-      const { items } = state
+      const { items2 } = state
       return {
         ...state,
-        items: items.map((item) =>
+        items2: items2.map((item) =>
           item.id === itemId
             ? Object.assign({}, item, {
                 start: edge === 'left' ? time : item.start,
@@ -188,11 +188,11 @@ function GanntChart({ className }) {
   }
   const handleItemMove = (itemId, dragTime, newGroupOrder) => {
     setState((state) => {
-      const { items, groups } = state
+      const { items2, groups } = state
       const group = groups[newGroupOrder]
       return {
         ...state,
-        items: items.map((item) =>
+        items2: items2.map((item) =>
           item.id === itemId
             ? Object.assign({}, item, {
                 start: dragTime,
@@ -424,6 +424,10 @@ export default styled(GanntChart)`
     display: flex;
     justify-content: space-between;
   }
+
+	.dashed {
+		border: '1px dashed gray';
+	}
 
   .side-header--label-item {
     border: 1px solid white;
