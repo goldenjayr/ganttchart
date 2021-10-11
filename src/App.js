@@ -2,11 +2,22 @@ import React, { Component, useState, useMemo, useRef } from 'react'
 import moment from 'moment'
 import styled from 'styled-components'
 import { useTable } from 'react-table'
+import { DndProvider } from 'react-dnd'
+import { HTML5Backend } from 'react-dnd-html5-backend'
+import faker from 'faker'
 
-import Timeline, { SidebarHeader, TimelineHeaders, CustomHeader, DateHeader } from 'react-calendar-timeline'
+import Timeline, {
+  SidebarHeader,
+  TimelineHeaders,
+  CustomHeader,
+  DateHeader,
+  CursorMarker,
+  TimelineMarkers
+} from 'react-calendar-timeline'
 // import containerResizeDetector from 'react-calendar-timeline/lib/resize-detector/container'
 import 'react-calendar-timeline/lib/Timeline.css'
-
+import { Box } from './Box'
+import { Dustbin } from './Dustbin'
 import generateFakeData from './generate-fake-data'
 
 var keys = {
@@ -22,34 +33,7 @@ var keys = {
   groupLabelKey: 'title'
 }
 
-const vehicleHeader = [
-  {
-    id: 'unit',
-    label: 'Unit'
-  },
-  {
-    id: 'odometer',
-    label: 'Odometer'
-  },
-  {
-    id: 'location',
-    label: 'Location'
-  },
-  {
-    id: 'year',
-    label: 'Year'
-  },
-  {
-    id: 'make',
-    label: 'Make'
-  },
-  {
-    id: 'model',
-    label: 'Model'
-  }
-]
-
-const { groups, items, data } = generateFakeData(5, 400)
+const { groups, items, data, reservations } = generateFakeData(5, 400)
 const { groups: groups2, items: items2 } = generateFakeData(5, 400)
 
 const visibleTimeStart = moment().startOf('day').valueOf()
@@ -91,15 +75,53 @@ function GanntChart({ className }) {
     []
   )
 
-  const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } = useTable({
+  const reservationColumn = useMemo(
+    () => [
+      {
+        Header: 'Unassigned Reservations',
+        columns: [
+          {
+            Header: 'Res ID',
+            accessor: 'res_id'
+          },
+          {
+            Header: 'Date',
+            accessor: 'date'
+          },
+          {
+            Header: 'Time',
+            accessor: 'time'
+          },
+          {
+            Header: 'Guest',
+            accessor: 'guest'
+          }
+        ]
+      }
+    ],
+    []
+  )
+
+  const { headerGroups, rows, prepareRow } = useTable({
     columns: vehicleColumns,
     data
   })
 
+  const {
+    headerGroups: reservationGroups,
+    rows: reservationRow,
+    prepareRow: prepareRow2
+  } = useTable({
+    columns: reservationColumn,
+    data: reservations
+  })
+
   const groups = useMemo(() => {
+    console.log('RESERVATION', reservationRow)
     return rows.map((row, i) => {
       prepareRow(row)
-      const { key } = row.getRowProps()
+      const rightSideRow = reservationRow.find((item, index) => index === i)
+      prepareRow2(rightSideRow)
       return {
         id: i,
         title: (
@@ -112,10 +134,22 @@ function GanntChart({ className }) {
               )
             })}
           </div>
+        ),
+        rightTitle: (
+          <Box className='side-header--label'>
+              {rightSideRow.cells.map((cell) => {
+                return (
+                  <div {...cell.getCellProps()} className='side-header--label-item'>
+                    {cell.render('Cell')}
+                  </div>
+                )
+              })}
+          </Box>
         )
       }
     })
   }, [])
+
   const [state, setState] = useState({
     groups,
     items,
@@ -153,11 +187,9 @@ function GanntChart({ className }) {
     })
   }
   const handleItemMove = (itemId, dragTime, newGroupOrder) => {
-
-
     setState((state) => {
-			const { items, groups } = state
-			const group = groups[newGroupOrder]
+      const { items, groups } = state
+      const group = groups[newGroupOrder]
       return {
         ...state,
         items: items.map((item) =>
@@ -189,8 +221,7 @@ function GanntChart({ className }) {
         items={items2}
         keys={keys}
         sidebarWidth={600}
-        rightSidebarWidth={150}
-        rightSidebarContent={<div>Above The Right</div>}
+        rightSidebarWidth={500}
         canMove={true}
         canResize={'both'}
         canSelect
@@ -202,7 +233,7 @@ function GanntChart({ className }) {
         visibleTimeEnd={visibleTimeEnd}
         onTimeChange={handleTimeChangeFirst}
         onItemResize={handleItemResize}
-				onItemMove={handleItemMove}
+        onItemMove={handleItemMove}
       >
         <TimelineHeaders>
           <SidebarHeader>
@@ -233,8 +264,7 @@ function GanntChart({ className }) {
         items={items2}
         keys={keys}
         sidebarWidth={600}
-        rightSidebarWidth={150}
-        rightSidebarContent={<div>Above The Right</div>}
+        rightSidebarWidth={500}
         canMove={true}
         canResize={'both'}
         canSelect
@@ -246,7 +276,31 @@ function GanntChart({ className }) {
         visibleTimeEnd={visibleTimeEnd}
         onTimeChange={handleTimeChangeFirst}
         onItemResize={handleItemResize}
-				onItemMove={handleItemMove}
+        onItemMove={handleItemMove}
+        onCanvasClick={(groupID, time, e) => {
+          if (!(e.nativeEvent instanceof PointerEvent)) {
+            setState((state) => {
+              const endValue = moment(time + faker.datatype.number({ min: 2, max: 20 }) * 15 * 60 * 1000).valueOf()
+              return {
+                ...state,
+                items2: [
+                  ...state.items2,
+                  {
+                    id: state.items2.length + 1,
+                    group: groupID,
+                    title: 'DONGJE',
+                    start: time,
+                    end: endValue,
+                    className: moment(endValue).day() === 6 || moment(endValue).day() === 0 ? 'item-weekend' : '',
+                    itemProps: {
+                      'data-tip': faker.hacker.phrase()
+                    }
+                  }
+                ]
+              }
+            })
+          }
+        }}
       >
         <TimelineHeaders>
           <SidebarHeader>
@@ -277,7 +331,8 @@ function GanntChart({ className }) {
         items={items}
         keys={keys}
         sidebarWidth={600}
-        rightSidebarWidth={150}
+        rightSidebarWidth={500}
+        rightSidebarContent={<div>Hello</div>}
         canMove
         canResize='right'
         canSelect
@@ -316,8 +371,26 @@ function GanntChart({ className }) {
           <DateHeader unit='primaryHeader' />
           <DateHeader />
           <SidebarHeader variant='right' headerData={{ someData: 'extra' }}>
-            {({ getRootProps, data }) => {
-              return <div {...getRootProps()}>Unassigned Reservations</div>
+            {({ getRootProps }) => {
+              return (
+                <div {...getRootProps()} className='side-header'>
+                  <div>
+                    {reservationGroups.map((headerGroup) => {
+                      return (
+                        <div {...headerGroup.getHeaderGroupProps()} className='side-header--label'>
+                          {headerGroup.headers.map((column) => {
+                            return (
+                              <div {...column.getHeaderProps()} className='side-header--label-item'>
+                                {column.render('Header')}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
             }}
           </SidebarHeader>
         </TimelineHeaders>
@@ -327,9 +400,13 @@ function GanntChart({ className }) {
 
   return (
     <div className={className}>
-      {renderFirst(state)}
-      {renderSecond(state)}
-      {renderThird(state)}
+      <DndProvider backend={HTML5Backend}>
+        <Dustbin>
+          {renderFirst(state)}
+          {renderSecond(state)}
+          {renderThird(state)}
+        </Dustbin>
+      </DndProvider>
     </div>
   )
 }

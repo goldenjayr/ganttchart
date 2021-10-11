@@ -7,6 +7,7 @@ export default function createData (groupCount = 30, itemCount = 1000, daysInPas
   let randomSeed = Math.floor(Math.random() * 1000)
   let groups = []
 	const data = []
+	const reservations = []
   for (let i = 0; i < groupCount; i++) {
 		const id = `${i + 1}`
 		const name = namor.generate({ words: 1, numbers: 0 })
@@ -23,6 +24,13 @@ export default function createData (groupCount = 30, itemCount = 1000, daysInPas
 			year: Math.floor(Math.random() * 1000),
 			make: namor.generate({ words: 1, numbers: 0}),
 			model: namor.generate({ words: 1, number: 2 })
+		})
+
+		reservations.push({
+			res_id: Math.floor(Math.random() * 30),
+			date: Date.now().toLocaleString(),
+			time: new Date().getTime(),
+			guest: namor.generate({ words: 1, numbers: 0 })
 		})
   }
 
@@ -49,5 +57,5 @@ export default function createData (groupCount = 30, itemCount = 1000, daysInPas
 
   items = items.sort((a, b) => b - a)
 
-  return { groups, items, data }
+  return { groups, items, data, reservations }
 }
